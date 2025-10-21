@@ -5,57 +5,61 @@
 
 #define MAX_STUDENTS 100
 #define NUM_SUBJECTS 3
+#define MAX_NAME_LENGTH 50
+#define MAX_MARKS 100
+#define MIN_MARKS 0
+#define MIN_ROLL 0
 
 struct Student {
-    int roll;
-    char name[50];
+    int rollNumber;
+    char name[MAX_NAME_LENGTH];
     int marks[NUM_SUBJECTS];
 };
 
-long long totalMarks(int marks[]);
-float averageMarks(long long total);
-char getGrade(float avg);
-void printStars(char grade);
-void printRollnoRecursive(int rolls[], int index, int n);
-void trimWhitespace(char *str);
-void sortRollNumbers(int rolls[], int n);
-int isDuplicateRoll(struct Student s[], int count, int roll);
+long long calculateTotalMarks(int marks[]);
+float calculateAverageMarks(long long totalMarks);
+char calculateGrade(float averageMarks);
+void displayPerformanceStars(char grade);
+void displayRollNumbersRecursive(int rollNumbers[], int currentIndex, int totalStudents);
+void trimWhitespace(char *string);
+void sortRollNumbersAscending(int rollNumbers[], int totalStudents);
+int isDuplicateRollNumber(struct Student students[], int totalEntered, int rollNumber);
 
 int main(void) {
-    int n, i, j;
-    struct Student s[MAX_STUDENTS];
-    int rolls[MAX_STUDENTS];
+    int totalStudents;
+    struct Student students[MAX_STUDENTS];
+    int rollNumbers[MAX_STUDENTS];
 
-    printf("Enter number of students (1-100): ");
-    if (scanf("%d", &n) != 1) {
+    printf("Enter number of students (1-%d): ", MAX_STUDENTS);
+    if (scanf("%d", &totalStudents) != 1) {
         printf("Invalid input\n");
         return 0;
     }
 
-    if (n < 1 || n > 100) {
+    if (totalStudents < 1 || totalStudents > MAX_STUDENTS) {
         printf("Invalid number of students\n");
         return 0;
     }
     while (getchar() != '\n'); 
 
-    for (i = 0; i < n; i++) {
-        printf("\nEnter details for student %d\n", i + 1);
+    for (int studentIndex = 0; studentIndex < totalStudents; studentIndex++) {
+        printf("\nEnter details for student %d\n", studentIndex + 1);
 
         while (1) {
             printf("Enter Roll no.: ");
-            if (scanf("%d", &s[i].roll) != 1) {
+            if (scanf("%d", &students[studentIndex].rollNumber) != 1) {
                 printf("Invalid roll number input.\n");
                 while (getchar() != '\n'); 
                 continue;
             }
 
-            if (s[i].roll < 0) {
+            if (students[studentIndex].rollNumber < MIN_ROLL) {
                 printf("Invalid roll number! Must be non-negative.\n");
                 while (getchar() != '\n'); 
                 continue;
             }
 
-            if (isDuplicateRoll(s, i, s[i].roll)) {
+            if (isDuplicateRollNumber(students, studentIndex, students[studentIndex].rollNumber)) {
                 printf("Duplicate roll number is invalid! Please enter a unique roll.\n");
                 while (getchar() != '\n'); 
                 continue;
@@ -66,154 +70,157 @@ int main(void) {
         }
 
         printf("Enter Name: ");
-        if (fgets(s[i].name, sizeof(s[i].name), stdin) == NULL) {
-            s[i].name[0] = '\0';
+        if (fgets(students[studentIndex].name, sizeof(students[studentIndex].name), stdin) == NULL) {
+            students[studentIndex].name[0] = '\0';
         }
-        trimWhitespace(s[i].name);
+        trimWhitespace(students[studentIndex].name);
 
-        for (j = 0; j < NUM_SUBJECTS; j++) {
-            int valid = 0;
-            while (!valid) {
-                printf("Enter Marks%d: ", j + 1);
-                if (scanf("%d", &s[i].marks[j]) != 1) {
+        for (int subjectIndex = 0; subjectIndex < NUM_SUBJECTS; subjectIndex++) {
+            int validInput = 0;
+            while (!validInput) {
+                printf("Enter Marks%d: ", subjectIndex + 1);
+                if (scanf("%d", &students[studentIndex].marks[subjectIndex]) != 1) {
                     printf("Invalid marks input.\n");
                     while (getchar() != '\n');
                     continue;
                 }
-                if (s[i].marks[j] < 0 || s[i].marks[j] > 100) {
-                    printf("Invalid marks! Enter a positive number\n");
+                if (students[studentIndex].marks[subjectIndex] < MIN_MARKS || 
+                    students[studentIndex].marks[subjectIndex] > MAX_MARKS) {
+                    printf("Invalid marks! Enter a number between %d and %d\n", MIN_MARKS, MAX_MARKS);
                     continue;
                 }
-                valid = 1;
+                validInput = 1;
             }
             while (getchar() != '\n');
         }
     }
 
     printf("\n--- Student Performance Report ---\n");
-    for (i = 0; i < n; i++) {
-        long long total = totalMarks(s[i].marks);
-        if (total > INT_MAX) {
-            printf("\nError: Total marks overflow for student %d\n", s[i].roll);
+    for (int studentIndex = 0; studentIndex < totalStudents; studentIndex++) {
+        long long totalMarks = calculateTotalMarks(students[studentIndex].marks);
+        if (totalMarks > INT_MAX) {
+            printf("\nError: Total marks overflow for student %d\n", students[studentIndex].rollNumber);
             continue; 
         }
 
-        float avg = averageMarks(total);
-        char grade = getGrade(avg);
+        float averageMarks = calculateAverageMarks(totalMarks);
+        char grade = calculateGrade(averageMarks);
 
-        printf("\nRoll: %d\n", s[i].roll);
-        printf("Name: %s\n", s[i].name);
-        printf("Total: %lld\n", total);
-        printf("Average: %.2f\n", avg);
+        printf("\nRoll: %d\n", students[studentIndex].rollNumber);
+        printf("Name: %s\n", students[studentIndex].name);
+        printf("Total: %lld\n", totalMarks);
+        printf("Average: %.2f\n", averageMarks);
         printf("Grade: %c\n", grade);
 
         if (grade == 'F') continue;
 
         printf("Performance: ");
-        printStars(grade);
+        displayPerformanceStars(grade);
         printf("\n");
     }
 
-    for (i = 0; i < n; i++) {
-        rolls[i] = s[i].roll;
+    for (int studentIndex = 0; studentIndex < totalStudents; studentIndex++) {
+        rollNumbers[studentIndex] = students[studentIndex].rollNumber;
     }
-    sortRollNumbers(rolls, n);
+    sortRollNumbersAscending(rollNumbers, totalStudents);
 
     printf("\nSorted list of Roll Numbers (via recursion): ");
-    printRollnoRecursive(rolls, 0, n);
+    displayRollNumbersRecursive(rollNumbers, 0, totalStudents);
     printf("\n");
 
     return 0;
 }
 
-int isDuplicateRoll(struct Student s[], int count, int roll) {
-    int i;
-    for (i = 0; i < count; i++) {
-        if (s[i].roll == roll)
+int isDuplicateRollNumber(struct Student students[], int totalEntered, int rollNumber) {
+    for (int checkIndex = 0; checkIndex < totalEntered; checkIndex++) {
+        if (students[checkIndex].rollNumber == rollNumber)
             return 1;
     }
     return 0;
 }
 
-long long totalMarks(int marks[]) {
-    long long total = 0;
-    int i;
-    for (i = 0; i < NUM_SUBJECTS; i++) {
-        if (total > LLONG_MAX - marks[i]) { 
+long long calculateTotalMarks(int marks[]) {
+    long long totalMarks = 0;
+    for (int subjectIndex = 0; subjectIndex < NUM_SUBJECTS; subjectIndex++) {
+        if (totalMarks > LLONG_MAX - marks[subjectIndex]) { 
             printf("Error: Integer overflow while calculating total marks!\n");
             return LLONG_MAX;
         }
-        total += marks[i];
+        totalMarks += marks[subjectIndex];
     }
-    return total;
+    return totalMarks;
 }
 
-float averageMarks(long long total) {
-    return (float)total / NUM_SUBJECTS;
+float calculateAverageMarks(long long totalMarks) {
+    return (float)totalMarks / NUM_SUBJECTS;
 }
 
-char getGrade(float avg) {
-    if (avg >= 85) return 'A';
-    else if (avg >= 70) return 'B';
-    else if (avg >= 50) return 'C';
-    else if (avg >= 35) return 'D';
+char calculateGrade(float averageMarks) {
+    const int GRADE_A = 85;
+    const int GRADE_B = 70;
+    const int GRADE_C = 50;
+    const int GRADE_D = 35;
+
+    if (averageMarks >= GRADE_A) return 'A';
+    else if (averageMarks >= GRADE_B) return 'B';
+    else if (averageMarks >= GRADE_C) return 'C';
+    else if (averageMarks >= GRADE_D) return 'D';
     else return 'F';
 }
 
-void printStars(char grade) {
-    int stars = 0;
-    int k;
+void displayPerformanceStars(char grade) {
+    int starCount = 0;
     switch (grade) {
-        case 'A': stars = 5; break;
-        case 'B': stars = 4; break;
-        case 'C': stars = 3; break;
-        case 'D': stars = 2; break;
-        default: stars = 0; break;
+        case 'A': starCount = 5; break;
+        case 'B': starCount = 4; break;
+        case 'C': starCount = 3; break;
+        case 'D': starCount = 2; break;
+        default: starCount = 0; break;
     }
-    for (k = 0; k < stars; k++) {
+    for (int starIndex = 0; starIndex < starCount; starIndex++) {
         printf("*");
     }
 }
 
-void printRollnoRecursive(int rolls[], int index, int n) {
-    if (index == n)
-	return;
-    printf("%d ", rolls[index]);
-    printRollnoRecursive(rolls, index + 1, n);
+void displayRollNumbersRecursive(int rollNumbers[], int currentIndex, int totalStudents) {
+    if (currentIndex == totalStudents)
+        return;
+    printf("%d ", rollNumbers[currentIndex]);
+    displayRollNumbersRecursive(rollNumbers, currentIndex + 1, totalStudents);
 }
 
-void trimWhitespace(char *str) {
-    int start = 0;
-	int end, len;
-    if (str == NULL)
-	return;
+void trimWhitespace(char *string) {
+    if (string == NULL)
+        return;
 
-    len = strlen(str);
-    end = len - 1;
-    while (end >= 0 && isspace((unsigned char)str[end])) {
-        str[end] = '\0';
-        end--;
+    int startIndex = 0;
+    int length = strlen(string);
+    int endIndex = length - 1;
+
+    while (endIndex >= 0 && isspace((unsigned char)string[endIndex])) {
+        string[endIndex] = '\0';
+        endIndex--;
     }
-    while (str[start] != '\0' && isspace((unsigned char)str[start])) 
-	start++;
 
-    if (start > 0) {
-        int i;
-        for (i = 0; str[start + i] != '\0'; i++) {
-            str[i] = str[start + i];
+    while (string[startIndex] != '\0' && isspace((unsigned char)string[startIndex])) 
+        startIndex++;
+
+    if (startIndex > 0) {
+        int moveIndex;
+        for (moveIndex = 0; string[startIndex + moveIndex] != '\0'; moveIndex++) {
+            string[moveIndex] = string[startIndex + moveIndex];
         }
-        str[i] = '\0';
+        string[moveIndex] = '\0';
     }
 }
 
-void sortRollNumbers(int rolls[], int n) {
-    int i, j, temp;
-    for (i = 0; i < n - 1; i++) {
-        for (j = i + 1; j < n; j++) {
-            if (rolls[i] > rolls[j]) {
-                temp = rolls[i];
-                rolls[i] = rolls[j];
-                rolls[j] = temp;
+void sortRollNumbersAscending(int rollNumbers[], int totalStudents) {
+    for (int outerIndex = 0; outerIndex < totalStudents - 1; outerIndex++) {
+        for (int innerIndex = outerIndex + 1; innerIndex < totalStudents; innerIndex++) {
+            if (rollNumbers[outerIndex] > rollNumbers[innerIndex]) {
+                int temp = rollNumbers[outerIndex];
+                rollNumbers[outerIndex] = rollNumbers[innerIndex];
+                rollNumbers[innerIndex] = temp;
             }
         }
     }
